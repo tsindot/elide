@@ -6,10 +6,10 @@
 package com.yahoo.elide.datastores.aggregation.queryengines.sql.metadata;
 
 import static com.yahoo.elide.core.utils.TypeHelper.appendAlias;
-import static com.yahoo.elide.core.utils.TypeHelper.getClassType;
 import static com.yahoo.elide.datastores.aggregation.metadata.MetaDataStore.isTableJoin;
 import com.yahoo.elide.core.Path;
 import com.yahoo.elide.core.dictionary.EntityDictionary;
+import com.yahoo.elide.core.type.ClassType;
 import com.yahoo.elide.core.type.Type;
 import com.yahoo.elide.datastores.aggregation.annotation.Join;
 import com.yahoo.elide.datastores.aggregation.annotation.JoinType;
@@ -34,6 +34,7 @@ import lombok.Getter;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -50,6 +51,9 @@ public class SQLReferenceTable {
     @Getter
     protected final EntityDictionary dictionary;
 
+    @Getter
+    protected final Map<Queryable, TableContext> globalTablesContext = new HashMap<>();
+
     //Stores  MAP<Queryable, MAP<fieldName, reference>>
     protected final Map<Queryable, Map<String, String>> resolvedReferences = new HashMap<>();
 
@@ -60,7 +64,7 @@ public class SQLReferenceTable {
 
     public SQLReferenceTable(MetaDataStore metaDataStore) {
         this(metaDataStore,
-             metaDataStore.getMetaData(getClassType(Table.class))
+             metaDataStore.getMetaData(ClassType.of(Table.class))
                 .stream()
                 .map(SQLTable.class::cast)
                 .collect(Collectors.toSet()));
@@ -134,6 +138,13 @@ public class SQLReferenceTable {
             resolvedJoinProjections.put(key, new HashMap<>());
         }
 
+        if (!globalTablesContext.containsKey(key)) {
+            Type<?> entityType = dictionary.getEntityClass(key.getName(), key.getVersion());
+            TableContext tableCtx = new TableContext(key.getAlias());
+            globalTablesContext.put(key, tableCtx);
+            populateTableContext(entityType, tableCtx, StringUtils.EMPTY);
+        }
+
         FormulaValidator validator = new FormulaValidator(metaDataStore);
         SQLJoinVisitor joinVisitor = new SQLJoinVisitor(metaDataStore);
 
@@ -152,6 +163,22 @@ public class SQLReferenceTable {
             resolvedJoinExpressions.get(key).put(fieldName, getJoinClauses(queryable.getSource().getAlias(),
                     joinPaths, dialect));
             resolvedJoinProjections.get(key).put(fieldName, getJoinProjections(joinPaths));
+        });
+    }
+
+    private void populateTableContext(Type<?> entityClass, TableContext tableCtx, String prefixPath) {
+
+        List<String> joinFields = dictionary.getFieldNamesHavingAnnotation(entityClass, Join.class);
+        for(String joinField : joinFields) {
+            Type<?> joinClass = dictionary.getType(entityClass, joinField);
+            TableContext joinTableCtx = new TableContext(appendAlias(tableCtx.getAlias(), dictionary.getJsonAliasFor(joinClass)));
+            tableCtx.put(joinField, joinTableCtx);
+            populateTableContext(joinClass, joinTableCtx, joinField);
+        }
+
+        SQLTable table = (SQLTable) metaDataStore.getTable(entityClass);
+        table.getColumnProjections().forEach(column -> {
+            tableCtx.put(column.getName(), new ColumnDefinition(column.getExpression(), prefixPath));
         });
     }
 

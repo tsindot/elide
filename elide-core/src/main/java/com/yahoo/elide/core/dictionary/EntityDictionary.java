@@ -1095,6 +1095,18 @@ public class EntityDictionary {
         return fieldOrMethod.getAnnotation(annotationClass);
     }
 
+    public List<String> getFieldNamesHavingAnnotation(Type<?> entityClass, Class<? extends Annotation> annotationClass) {
+        List<String> fieldNames = new ArrayList<>();
+
+        getEntityBinding(entityClass).fieldsToValues.forEach((identifier, fieldOrMethod) -> {
+            if (fieldOrMethod.getAnnotation(annotationClass) != null) {
+                fieldNames.add(identifier);
+            }
+        });
+
+        return fieldNames;
+    }
+    
     /**
      * Return multiple annotations from field or accessor method.
      *

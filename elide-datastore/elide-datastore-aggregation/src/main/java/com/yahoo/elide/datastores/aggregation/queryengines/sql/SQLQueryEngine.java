@@ -206,7 +206,7 @@ public class SQLQueryEngine extends QueryEngine {
     }
 
     @Override
-    public QueryResult executeQuery(Query query, Transaction transaction) {
+    public QueryResult executeQuery(Query query, Transaction transaction, Map<String, Object> queryContext) {
         SqlTransaction sqlTransaction = (SqlTransaction) transaction;
         ConnectionDetails details = query.getConnectionDetails();
         DataSource dataSource = details.getDataSource();
@@ -298,10 +298,11 @@ public class SQLQueryEngine extends QueryEngine {
      * Returns the actual query string(s) that would be executed for the input {@link Query}.
      *
      * @param query The query customized for a particular persistent storage or storage client.
+     * @param queryContext Context object for resolving handlebars references.
      * @param dialect SQL dialect to use for this storage.
      * @return List of SQL string(s) corresponding to the given query.
      */
-    public List<String> explain(Query query, SQLDialect dialect) {
+    public List<String> explain(Query query, Map<String, Object> queryContext, SQLDialect dialect) {
         List<String> queries = new ArrayList<>();
         Query expandedQuery = expandMetricQueryPlans(query);
         NativeQuery sql = toSQL(expandedQuery, dialect);
@@ -318,8 +319,8 @@ public class SQLQueryEngine extends QueryEngine {
     }
 
     @Override
-    public List<String> explain(Query query) {
-        return explain(query, query.getConnectionDetails().getDialect());
+    public List<String> explain(Query query, Map<String, Object> queryContext) {
+        return explain(query, queryContext, query.getConnectionDetails().getDialect());
     }
 
     /**

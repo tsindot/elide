@@ -23,6 +23,7 @@ import com.yahoo.elide.datastores.aggregation.query.QueryResult;
 import com.yahoo.elide.datastores.aggregation.query.TimeDimensionProjection;
 import lombok.Getter;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -168,9 +169,14 @@ public abstract class QueryEngine {
      *
      * @param query The query customized for a particular persistent storage or storage client
      * @param transaction
+     * @param queryContext Context object for resolving handlebars references.
      * @return query results
      */
-    public abstract QueryResult executeQuery(Query query, Transaction transaction);
+    public abstract QueryResult executeQuery(Query query, Transaction transaction, Map<String, Object> queryContext);
+
+    public QueryResult executeQuery(Query query, Transaction transaction) {
+        return executeQuery(query, transaction, Collections.emptyMap());
+    }
 
     /**
      * Get a serial number or other token indicating the version of the data in the table.
@@ -186,8 +192,12 @@ public abstract class QueryEngine {
      * Returns the actual query string(s) that would be executed for the input {@link Query}.
      *
      * @param query The query customized for a particular persistent storage or storage client.
+     * @param queryContext Context object for resolving handlebars references.
      * @return List of SQL string(s) corresponding to the given query.
      */
-    public abstract List<String> explain(Query query);
+    public abstract List<String> explain(Query query, Map<String, Object> queryContext);
 
+    public List<String> explain(Query query) {
+        return explain(query, Collections.emptyMap());
+    }
 }
