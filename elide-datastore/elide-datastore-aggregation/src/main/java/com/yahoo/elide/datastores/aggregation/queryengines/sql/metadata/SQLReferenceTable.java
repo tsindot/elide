@@ -123,6 +123,7 @@ public class SQLReferenceTable {
      */
     public void resolveAndStoreAllReferencesAndJoins(Queryable queryable) {
 
+        boolean isNested = queryable.isNested();
         //References and joins are stored by their source that produces them (rather than the query that asks for them).
         Queryable key = queryable.getSource();
         SQLDialect dialect = queryable.getSource().getConnectionDetails().getDialect();
@@ -139,10 +140,15 @@ public class SQLReferenceTable {
         }
 
         if (!globalTablesContext.containsKey(key)) {
-            Type<?> entityType = dictionary.getEntityClass(key.getName(), key.getVersion());
             TableContext tableCtx = new TableContext(key.getAlias());
             globalTablesContext.put(key, tableCtx);
-            populateTableContext(entityType, tableCtx, StringUtils.EMPTY);
+
+            if (! isNested) {
+                Type<?> entityType = dictionary.getEntityClass(key.getName(), key.getVersion());
+                populateTableContext(entityType, tableCtx, StringUtils.EMPTY);
+            } else {
+                // TODO
+            }
         }
 
         FormulaValidator validator = new FormulaValidator(metaDataStore, globalTablesContext.get(key));
