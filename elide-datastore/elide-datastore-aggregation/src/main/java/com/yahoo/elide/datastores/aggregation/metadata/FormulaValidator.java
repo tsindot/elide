@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 public class FormulaValidator extends ColumnVisitor<Void> {
     private final LinkedHashSet<String> visited = new LinkedHashSet<>();
     private final TableContext tableCtx;
-    
+
     private static String getColumnId(Queryable parent, ColumnProjection column) {
         return parent.getName() + "." + column.getName();
     }

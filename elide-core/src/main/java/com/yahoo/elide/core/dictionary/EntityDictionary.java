@@ -1095,7 +1095,8 @@ public class EntityDictionary {
         return fieldOrMethod.getAnnotation(annotationClass);
     }
 
-    public List<String> getFieldNamesHavingAnnotation(Type<?> entityClass, Class<? extends Annotation> annotationClass) {
+    public List<String> getFieldNamesHavingAnnotation(Type<?> entityClass,
+            Class<? extends Annotation> annotationClass) {
         List<String> fieldNames = new ArrayList<>();
 
         getEntityBinding(entityClass).fieldsToValues.forEach((identifier, fieldOrMethod) -> {
@@ -1106,7 +1107,7 @@ public class EntityDictionary {
 
         return fieldNames;
     }
-    
+
     /**
      * Return multiple annotations from field or accessor method.
      *

@@ -169,9 +169,10 @@ public class SQLReferenceTable {
     private void populateTableContext(Type<?> entityClass, TableContext tableCtx, String prefixPath) {
 
         List<String> joinFields = dictionary.getFieldNamesHavingAnnotation(entityClass, Join.class);
-        for(String joinField : joinFields) {
+        for (String joinField : joinFields) {
             Type<?> joinClass = dictionary.getType(entityClass, joinField);
-            TableContext joinTableCtx = new TableContext(appendAlias(tableCtx.getAlias(), dictionary.getJsonAliasFor(joinClass)));
+            TableContext joinTableCtx = new TableContext(appendAlias(tableCtx.getAlias(),
+                    dictionary.getJsonAliasFor(joinClass)));
             tableCtx.put(joinField, joinTableCtx);
             populateTableContext(joinClass, joinTableCtx, joinField);
         }
