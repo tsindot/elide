@@ -13,6 +13,7 @@ import com.yahoo.elide.datastores.aggregation.metadata.models.Column;
 import com.yahoo.elide.datastores.aggregation.query.ColumnProjection;
 import com.yahoo.elide.datastores.aggregation.query.MetricProjection;
 import com.yahoo.elide.datastores.aggregation.query.Queryable;
+import com.yahoo.elide.datastores.aggregation.queryengines.sql.metadata.TableContext;
 
 import java.util.LinkedHashSet;
 import java.util.stream.Collectors;
@@ -23,13 +24,15 @@ import java.util.stream.Collectors;
  */
 public class FormulaValidator extends ColumnVisitor<Void> {
     private final LinkedHashSet<String> visited = new LinkedHashSet<>();
-
+    private final TableContext tableCtx;
+    
     private static String getColumnId(Queryable parent, ColumnProjection column) {
         return parent.getName() + "." + column.getName();
     }
 
-    public FormulaValidator(MetaDataStore metaDataStore) {
+    public FormulaValidator(MetaDataStore metaDataStore, TableContext tableCtx) {
         super(metaDataStore);
+        this.tableCtx = tableCtx;
     }
 
     @Override

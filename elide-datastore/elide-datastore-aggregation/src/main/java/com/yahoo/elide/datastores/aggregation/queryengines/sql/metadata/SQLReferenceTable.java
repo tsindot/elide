@@ -145,7 +145,7 @@ public class SQLReferenceTable {
             populateTableContext(entityType, tableCtx, StringUtils.EMPTY);
         }
 
-        FormulaValidator validator = new FormulaValidator(metaDataStore);
+        FormulaValidator validator = new FormulaValidator(metaDataStore, globalTablesContext.get(key));
         SQLJoinVisitor joinVisitor = new SQLJoinVisitor(metaDataStore);
 
         queryable.getColumnProjections().forEach(column -> {
