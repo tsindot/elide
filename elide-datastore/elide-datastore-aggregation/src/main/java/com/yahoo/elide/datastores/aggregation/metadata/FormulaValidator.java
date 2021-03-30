@@ -5,6 +5,10 @@
  */
 package com.yahoo.elide.datastores.aggregation.metadata;
 
+import com.github.jknack.handlebars.EscapingStrategy;
+import com.github.jknack.handlebars.Handlebars;
+import com.github.jknack.handlebars.Helper;
+import com.github.jknack.handlebars.Options;
 import com.yahoo.elide.core.type.Type;
 import com.yahoo.elide.datastores.aggregation.annotation.DimensionFormula;
 import com.yahoo.elide.datastores.aggregation.annotation.MetricFormula;
@@ -15,6 +19,7 @@ import com.yahoo.elide.datastores.aggregation.query.MetricProjection;
 import com.yahoo.elide.datastores.aggregation.query.Queryable;
 import com.yahoo.elide.datastores.aggregation.queryengines.sql.metadata.TableContext;
 
+import java.io.IOException;
 import java.util.LinkedHashSet;
 import java.util.stream.Collectors;
 
@@ -25,6 +30,7 @@ import java.util.stream.Collectors;
 public class FormulaValidator extends ColumnVisitor<Void> {
     private final LinkedHashSet<String> visited = new LinkedHashSet<>();
     private final TableContext tableCtx;
+    private final Handlebars handlebars;
 
     private static String getColumnId(Queryable parent, ColumnProjection column) {
         return parent.getName() + "." + column.getName();
@@ -33,6 +39,20 @@ public class FormulaValidator extends ColumnVisitor<Void> {
     public FormulaValidator(MetaDataStore metaDataStore, TableContext tableCtx) {
         super(metaDataStore);
         this.tableCtx = tableCtx;
+        this.handlebars = new Handlebars().with(EscapingStrategy.NOOP);
+        this.handlebars.registerHelper("sql", new Helper<Object>() {
+
+            @Override
+            public Object apply(final Object context, final Options options) throws IOException {
+                String from = options.hash("from");
+                String column = options.hash("column");
+                if (column.indexOf('[') != -1) {
+                    column = column.substring(0, column.indexOf('['));
+                }
+
+                return "{{" + from + "." + column + "}}";
+            }
+        });
     }
 
     @Override
