@@ -28,7 +28,6 @@ import com.yahoo.elide.datastores.aggregation.core.QueryLogger;
 import com.yahoo.elide.datastores.aggregation.core.QueryResponse;
 import com.yahoo.elide.datastores.aggregation.example.PlayerStats;
 import com.yahoo.elide.datastores.aggregation.framework.SQLUnitTest;
-import com.yahoo.elide.datastores.aggregation.metadata.MetaDataStore;
 import com.yahoo.elide.datastores.aggregation.query.Query;
 import com.yahoo.elide.datastores.aggregation.query.QueryResult;
 import com.yahoo.elide.datastores.aggregation.queryengines.sql.SQLQueryEngine;
@@ -59,7 +58,6 @@ class AggregationDataStoreTransactionTest extends SQLUnitTest {
     @Mock private RequestScope scope;
     @Mock private Cache cache;
     @Mock private QueryLogger queryLogger;
-    @Mock private MetaDataStore metaDataStore;
 
     private Query query = Query.builder().source(playerStatsTable).build();
     private final String queryKey = QueryKeyExtractor.extractKey(query);
@@ -76,6 +74,16 @@ class AggregationDataStoreTransactionTest extends SQLUnitTest {
         protected Query buildQuery(EntityProjection entityProjection, RequestScope scope) {
             return query;
         }
+
+        @Override
+        protected void populateUserContext(RequestScope scope, Map<String, Object> context) {
+            return;
+        }
+
+        @Override
+        protected void populateRequestContext(EntityProjection entityProjection, Map<String, Object> context) {
+            return;
+        }
     }
 
     @BeforeAll
@@ -86,7 +94,6 @@ class AggregationDataStoreTransactionTest extends SQLUnitTest {
     @BeforeEach
     public void setUp() {
         when(queryEngine.beginTransaction()).thenReturn(qeTransaction);
-        when(queryEngine.getMetaDataStore()).thenReturn(metaDataStore);
     }
 
     @Test
@@ -98,8 +105,8 @@ class AggregationDataStoreTransactionTest extends SQLUnitTest {
                 .fromClause(playerStatsTable.getName())
                 .projectionClause(" ").build();
         when(queryEngine.getTableVersion(playerStatsTable, qeTransaction)).thenReturn("foo");
-        when(queryEngine.executeQuery(query, qeTransaction)).thenReturn(queryResult);
-        when(queryEngine.explain(query)).thenReturn(Arrays.asList(myQuery.toString()));
+        when(queryEngine.executeQuery(query, qeTransaction, Collections.emptyMap())).thenReturn(queryResult);
+        when(queryEngine.explain(query, Collections.emptyMap())).thenReturn(Arrays.asList(myQuery.toString()));
         AggregationDataStoreTransaction transaction =
                 new MyAggregationDataStoreTransaction(queryEngine, cache, queryLogger);
         EntityProjection entityProjection = EntityProjection.builder().type(PlayerStats.class).build();
@@ -130,7 +137,7 @@ class AggregationDataStoreTransactionTest extends SQLUnitTest {
                 .projectionClause(" ").build();
         when(cache.get(cacheKey)).thenReturn(queryResult);
         when(queryEngine.getTableVersion(playerStatsTable, qeTransaction)).thenReturn("foo");
-        when(queryEngine.explain(query)).thenReturn(Arrays.asList(myQuery.toString()));
+        when(queryEngine.explain(query, Collections.emptyMap())).thenReturn(Arrays.asList(myQuery.toString()));
         AggregationDataStoreTransaction transaction =
                 new MyAggregationDataStoreTransaction(queryEngine, cache, queryLogger);
         EntityProjection entityProjection = EntityProjection.builder().type(PlayerStats.class).build();
@@ -159,7 +166,7 @@ class AggregationDataStoreTransactionTest extends SQLUnitTest {
                 .projectionClause(" ").build();
         when(cache.get(anyString())).thenReturn(queryResult);
         when(queryEngine.getTableVersion(playerStatsTable, qeTransaction)).thenReturn("foo");
-        when(queryEngine.explain(query)).thenReturn(Arrays.asList(myQuery.toString()));
+        when(queryEngine.explain(query, Collections.emptyMap())).thenReturn(Arrays.asList(myQuery.toString()));
         AggregationDataStoreTransaction transaction =
                 new MyAggregationDataStoreTransaction(queryEngine, cache, queryLogger);
         Pagination pagination = new PaginationImpl(
@@ -193,9 +200,9 @@ class AggregationDataStoreTransactionTest extends SQLUnitTest {
 
         QueryResult queryResult = QueryResult.builder().data(DATA).build();
 
-        when(queryEngine.executeQuery(query, qeTransaction))
+        when(queryEngine.executeQuery(query, qeTransaction, Collections.emptyMap()))
                 .thenReturn(queryResult);
-        when(queryEngine.explain(query)).thenReturn(Arrays.asList(myQuery.toString()));
+        when(queryEngine.explain(query, Collections.emptyMap())).thenReturn(Arrays.asList(myQuery.toString()));
         AggregationDataStoreTransaction transaction =
                 new MyAggregationDataStoreTransaction(queryEngine, cache, queryLogger);
         EntityProjection entityProjection = EntityProjection.builder().type(PlayerStats.class).build();
@@ -224,8 +231,8 @@ class AggregationDataStoreTransactionTest extends SQLUnitTest {
                 .projectionClause(" ").build();
 
         QueryResult queryResult = QueryResult.builder().data(DATA).build();
-        when(queryEngine.executeQuery(query, qeTransaction)).thenReturn(queryResult);
-        when(queryEngine.explain(query)).thenReturn(Arrays.asList(myQuery.toString()));
+        when(queryEngine.executeQuery(query, qeTransaction, Collections.emptyMap())).thenReturn(queryResult);
+        when(queryEngine.explain(query, Collections.emptyMap())).thenReturn(Arrays.asList(myQuery.toString()));
         AggregationDataStoreTransaction transaction =
                 new MyAggregationDataStoreTransaction(queryEngine, cache, queryLogger);
         EntityProjection entityProjection = EntityProjection.builder().type(PlayerStats.class).build();
@@ -250,7 +257,7 @@ class AggregationDataStoreTransactionTest extends SQLUnitTest {
         try {
             query = Query.builder().source(playerStatsTable).bypassingCache(true).build();
             doThrow(new NullPointerException(nullPointerExceptionMessage))
-                    .when(queryEngine).executeQuery(query, qeTransaction);
+                    .when(queryEngine).executeQuery(query, qeTransaction, Collections.emptyMap());
             AggregationDataStoreTransaction transaction =
                     new MyAggregationDataStoreTransaction(queryEngine, cache, queryLogger);
             EntityProjection entityProjection = EntityProjection.builder().type(PlayerStats.class).build();
@@ -292,7 +299,7 @@ class AggregationDataStoreTransactionTest extends SQLUnitTest {
         Map<String, Object> context = new HashMap<>();
         Handlebars handlebars = new Handlebars();
         try (AggregationDataStoreTransaction transaction =
-                        new MyAggregationDataStoreTransaction(queryEngine, cache, queryLogger)) {
+                        new AggregationDataStoreTransaction(queryEngine, cache, queryLogger)) {
             transaction.populateUserContext(scope, context);
         }
         assertEquals("foo", handlebars.compileInline("{{$$user.identity}}").apply(context));
@@ -301,12 +308,12 @@ class AggregationDataStoreTransactionTest extends SQLUnitTest {
     @Test
     public void testPopulateRequestContext() throws IOException {
 
-        when(metaDataStore.getTable(any())).thenReturn(playerStatsTable);
+        when(queryEngine.getMetaDataStore()).thenReturn(metaDataStore);
         Map<String, Object> context = new HashMap<>();
         Handlebars handlebars = new Handlebars();
         EntityProjection entityProjection = EntityProjection.builder().type(playerStatsType).build();
         try (AggregationDataStoreTransaction transaction =
-                        new MyAggregationDataStoreTransaction(queryEngine, cache, queryLogger)) {
+                        new AggregationDataStoreTransaction(queryEngine, cache, queryLogger)) {
             transaction.populateRequestContext(entityProjection, context);
         }
         assertEquals(playerStatsTable.getName(), handlebars.compileInline("{{$$request.table.name}}").apply(context));

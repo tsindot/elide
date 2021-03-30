@@ -156,12 +156,14 @@ public class AggregationDataStoreTransaction implements DataStoreTransaction {
         return query;
     }
 
+    @VisibleForTesting
     void populateUserContext(RequestScope scope, Map<String, Object> context) {
         Map<String, Object> userMap = new HashMap<>();
         context.put("$$user", userMap);
         userMap.put("identity", scope.getUser().getName());
     }
 
+    @VisibleForTesting
     void populateRequestContext(EntityProjection entityProjection, Map<String, Object> context) {
 
         Map<String, Object> requestMap = new HashMap<>();
