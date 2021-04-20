@@ -1,3 +1,9 @@
+/*
+ * Copyright 2021, Yahoo Inc.
+ * Licensed under the Apache License, Version 2.0
+ * See LICENSE file in project root for terms.
+ */
+
 package com.yahoo.elide.core.security.visitors;
 
 import com.yahoo.elide.core.dictionary.EntityDictionary;
@@ -8,7 +14,6 @@ import com.yahoo.elide.core.security.checks.FilterExpressionCheck;
 import com.yahoo.elide.core.security.checks.UserCheck;
 import com.yahoo.elide.core.security.permissions.ExpressionResult;
 import com.yahoo.elide.core.security.permissions.expressions.AndExpression;
-import com.yahoo.elide.core.security.permissions.expressions.CheckExpression;
 import com.yahoo.elide.core.security.permissions.expressions.Expression;
 import com.yahoo.elide.core.security.permissions.expressions.NotExpression;
 import com.yahoo.elide.core.security.permissions.expressions.OrExpression;
